@@ -1,0 +1,30 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: transit_db
+      MYSQL_USER: transit_user
+      MYSQL_PASSWORD: secret123
+    # ❌ no ports here – avoids 3306 conflict on teammates' machines
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    # phpMyAdmin is still exposed on 8080
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: transit_user
+      PMA_PASSWORD: secret123
+    depends_on:
+      - db
+
+volumes:
+  mysql_data:
+
+
