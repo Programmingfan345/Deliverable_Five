@@ -9,12 +9,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name     = trim($_POST['full_name'] ?? '');
     $email    = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $role     = $_POST['role'] ?? 'STUDENT';
 
     if ($name === '' || $email === '' || $password === '') {
         $errors[] = 'All fields are required.';
+    } elseif (!in_array($role, ['STUDENT', 'DRIVER', 'ADMIN'], true)) {
+        $errors[] = 'Invalid role selected.';
     } else {
         // check if email already exists
-        $check = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $check = $conn->prepare("SELECT user_id FROM users WHERE email = ?");
         $check->bind_param("s", $email);
         $check->execute();
         $checkResult = $check->get_result();
@@ -22,15 +25,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($checkResult->num_rows > 0) {
             $errors[] = 'An account with that email already exists.';
         } else {
-            $hash = password_hash($password, PASSWORD_DEFAULT);
-
-            $stmt = $conn->prepare(
-                "INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)"
-            );
-            $stmt->bind_param("sss", $name, $email, $hash);
+            // SCHOOL PROJECT ONLY: store password as plain text
+            $stmt = $conn->prepare("
+                INSERT INTO users (full_name, email, password, role)
+                VALUES (?, ?, ?, ?)
+            ");
+            $stmt->bind_param("ssss", $name, $email, $password, $role);
 
             if ($stmt->execute()) {
-                // optional: redirect back to login with message
                 header('Location: index.php?signup=ok');
                 exit;
             } else {
@@ -97,7 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         input[type="email"],
         input[type="password"],
-        input[type="text"] {
+        input[type="text"],
+        select {
             width: 100%;
             padding: 16px 20px;
             background: #1a1a1a;
@@ -106,7 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #fff;
             font-size: 16px;
         }
-        input:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: #d4af37;
             box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
@@ -146,6 +150,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 10px;
             font-size: 14px;
             margin-bottom: 18px;
+        }
+
+        a.link {
+            color: #d4af37;
+            text-decoration: none;
+        }
+        a.link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -189,10 +201,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        placeholder="Create a password" required>
             </div>
 
+            <div style="margin-bottom: 15px;">
+                <label for="role">Role</label>
+                <select id="role" name="role" required>
+                    <option value="STUDENT">Student</option>
+                    <option value="DRIVER">Driver</option>
+                    <option value="ADMIN">Admin</option>
+                </select>
+            </div>
+
             <button type="submit" class="btn-primary">Create Account</button>
 
             <div style="text-align:center; margin-top:20px;">
-                <a href="index.php" style="color:#d4af37;">Back to Login</a>
+                <a class="link" href="index.php">Back to Login</a>
             </div>
         </form>
     </div>
