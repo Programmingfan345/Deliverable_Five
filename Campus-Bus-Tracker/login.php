@@ -15,8 +15,9 @@ if ($email === '' || $password === '') {
     exit;
 }
 
-$sql = "SELECT id, full_name, email, password_hash 
-        FROM users 
+// Look up user
+$sql = "SELECT id, full_name, email, password_hash
+        FROM users
         WHERE email = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $email);
@@ -25,7 +26,7 @@ $result = $stmt->get_result();
 
 if ($row = $result->fetch_assoc()) {
     if (password_verify($password, $row['password_hash'])) {
-        // ✅ success – store in session
+        // Success
         $_SESSION['user_id']    = $row['id'];
         $_SESSION['user_name']  = $row['full_name'];
         $_SESSION['user_email'] = $row['email'];
@@ -35,6 +36,6 @@ if ($row = $result->fetch_assoc()) {
     }
 }
 
-// ❌ invalid login
+// If we got here, login failed
 header('Location: index.php?error=invalid');
 exit;
