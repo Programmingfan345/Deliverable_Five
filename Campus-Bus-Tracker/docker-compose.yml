@@ -1,4 +1,14 @@
 services:
+  web:
+    build:
+      context: .          # uses Dockerfile in Campus-Bus-Tracker
+      dockerfile: Dockerfile
+    container_name: campus-bus-tracker
+    ports:
+      - "8081:80"         # http://localhost:8081
+    depends_on:
+      - db
+
   db:
     image: mysql:8.0
     restart: always
@@ -7,16 +17,14 @@ services:
       MYSQL_DATABASE: transit_db
       MYSQL_USER: transit_user
       MYSQL_PASSWORD: secret123
-    # ❌ no ports here – avoids 3306 conflict on teammates' machines
     volumes:
       - mysql_data:/var/lib/mysql
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     restart: always
-    # phpMyAdmin is still exposed on 8080
     ports:
-      - "8080:80"
+      - "8080:80"          # phpMyAdmin on http://localhost:8080
     environment:
       PMA_HOST: db
       PMA_USER: transit_user
@@ -26,5 +34,3 @@ services:
 
 volumes:
   mysql_data:
-
-
