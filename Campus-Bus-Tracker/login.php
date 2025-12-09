@@ -2,40 +2,39 @@
 session_start();
 require 'db.php';
 
-$email    = $_POST['email']    ?? '';
-$password = $_POST['password'] ?? '';
-
-if (!$email || !$password) {
-    echo "Please enter both email and password.";
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: index.php');
     exit;
 }
 
-// Look up user by email
-$stmt = $conn->prepare("SELECT user_id, full_name, email, password FROM users WHERE email = ?");
+$email    = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
+
+if ($email === '' || $password === '') {
+    header('Location: index.php?error=invalid');
+    exit;
+}
+
+$sql = "SELECT id, full_name, email, password_hash 
+        FROM users 
+        WHERE email = ?";
+$stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $email);
 $stmt->execute();
 $result = $stmt->get_result();
 
-if ($result->num_rows === 0) {
-    echo "Invalid email or password.";
-    exit;
+if ($row = $result->fetch_assoc()) {
+    if (password_verify($password, $row['password_hash'])) {
+        // ✅ success – store in session
+        $_SESSION['user_id']    = $row['id'];
+        $_SESSION['user_name']  = $row['full_name'];
+        $_SESSION['user_email'] = $row['email'];
+
+        header('Location: bus-navigation-app.php');
+        exit;
+    }
 }
 
-$user = $result->fetch_assoc();
-
-// For this project we compare plain text (password = '1234')
-if ($password !== $user['password']) {
-    echo "Invalid email or password.";
-    exit;
-}
-
-// Store session data
-$_SESSION['user_id']   = $user['user_id'];
-$_SESSION['full_name'] = $user['full_name'];
-$_SESSION['email']     = $user['email'];
-
-// Redirect back to the main app page
-header("Location: index.php");  // or index.php if you rename later
+// ❌ invalid login
+header('Location: index.php?error=invalid');
 exit;
-?>
-
