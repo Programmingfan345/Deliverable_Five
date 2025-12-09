@@ -1,13 +1,13 @@
 <?php
-// db.php — MySQL connection
+// db.php — MySQL connection for Docker setup
 
-$host   = "127.0.0.1";      // Docker is exposing MySQL on localhost:3306
-$port = 3307;
-$user   = "transit_user";   // from docker-compose.yml
-$pass   = "secret123";      // from docker-compose.yml
-$dbname = "transit_db";     // from docker-compose.yml
+$host   = "db";           // 👈 service name from docker-compose.yml
+$port   = 3306;          // default MySQL port inside the Docker network
+$user   = "transit_user"; // from docker-compose.yml
+$pass   = "secret123";    // from docker-compose.yml
+$dbname = "transit_db";   // from docker-compose.yml
 
-$conn = new mysqli($host, $user, $pass, $dbname);
+$conn = new mysqli($host, $user, $pass, $dbname, $port);
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
